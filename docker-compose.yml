@@ -15,7 +15,7 @@ services:
     restart: always
 
   perspectiva_api:
-    build: ./app
+    build: .
     container_name: perspectiva_api
     depends_on:
       - db
