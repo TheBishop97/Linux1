@@ -1,26 +1,32 @@
 version: "3.9"
 
 services:
-  api:
-    build: .
-    container_name: perspectiva_api
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-
   db:
-    image: postgres:14
+    image: postgres:15
     container_name: perspectiva_db
-    restart: always
     environment:
-      POSTGRES_USER: 
-      POSTGRES_PASSWORD: 
-      POSTGRES_DB: 
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: perspectiva
+    ports:
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    restart: always
+
+  perspectiva_api:
+    build: ./app
+    container_name: perspectiva_api
+    depends_on:
+      - db
+    entrypoint: ["./wait-for-db.sh", "db", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/perspectiva
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+    restart: always
 
 volumes:
   db_data:

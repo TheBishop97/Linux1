@@ -4,51 +4,50 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
-            }
-        }
-
-        stage('Prepare Env') {
-            steps {
-                echo 'Preparing environment file...'
-                sh '''
-                if [ ! -f .env ]; then
-                  cp .env.example .env
-                  echo ".env file created from .env.example"
-                else
-                  echo ".env file already exists"
-                fi
-                '''
+                git branch: 'main', url: 'https://github.com/TheBishop97/Linux1.git', credentialsId: 'My-Github-Access'
             }
         }
 
         stage('Build') {
             steps {
                 echo 'Building Docker images...'
-                sh 'docker-compose build --pull --no-cache'
+                sh '''
+                    # Copy .env if missing
+                    if [ ! -f .env ]; then
+                        cp .env.example .env
+                    fi
+
+                    docker-compose build --pull --no-cache
+                '''
+            }
+        }
+
+        stage('Run') {
+            steps {
+                echo 'Starting containers...'
+                sh '''
+                    docker-compose up -d
+                '''
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                // Add your test commands here
-                sh 'docker-compose run --rm app pytest || true'
+                echo 'Testing API...'
+                sh '''
+                    # Optional: add simple healthcheck
+                    curl -f http://localhost:8000 || exit 1
+                '''
             }
         }
 
-        stage('Deploy') {
+        stage('Cleanup') {
             steps {
-                echo 'Deploying containers...'
-                sh 'docker-compose up -d'
+                echo 'Cleaning dangling resources...'
+                sh '''
+                    docker system prune -f
+                '''
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Post: cleanup dangling resources...'
-            sh 'docker system prune -f || true'
         }
     }
 }
