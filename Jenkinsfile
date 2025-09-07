@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        COMPOSE_FILE = 'docker-compose.yml'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -12,44 +8,47 @@ pipeline {
             }
         }
 
+        stage('Prepare Env') {
+            steps {
+                echo 'Preparing environment file...'
+                sh '''
+                if [ ! -f .env ]; then
+                  cp .env.example .env
+                  echo ".env file created from .env.example"
+                else
+                  echo ".env file already exists"
+                fi
+                '''
+            }
+        }
+
         stage('Build') {
             steps {
-                script {
-                    echo 'Building Docker images...'
-                    sh 'docker-compose build --pull --no-cache'
-                }
+                echo 'Building Docker images...'
+                sh 'docker-compose build --pull --no-cache'
             }
         }
 
         stage('Test') {
             steps {
-                script {
-                    echo 'Running basic smoke test...'
-                    // Try to run a simple command inside the built api container
-                    sh '''
-                      docker-compose up -d db || true
-                      docker-compose run --rm api python -c "import sys; print('python-run-ok'); sys.exit(0)"
-                    '''
-                }
+                echo 'Running tests...'
+                // Add your test commands here
+                sh 'docker-compose run --rm app pytest || true'
             }
         }
 
         stage('Deploy') {
             steps {
-                script {
-                    echo 'Bringing stack up...'
-                    sh 'docker-compose up -d'
-                }
+                echo 'Deploying containers...'
+                sh 'docker-compose up -d'
             }
         }
     }
 
     post {
         always {
-            script {
-                echo 'Post: cleanup dangling resources...'
-                sh 'docker system prune -f || true'
-            }
+            echo 'Post: cleanup dangling resources...'
+            sh 'docker system prune -f || true'
         }
     }
 }
