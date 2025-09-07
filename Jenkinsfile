@@ -14,9 +14,20 @@ pipeline {
                 sh '''
                     # Copy .env if missing
                     if [ ! -f .env ]; then
-                        cp .env.example .env
+                        cp .env.example .env || touch .env
                     fi
-		# Clean up existing containers to avoid name conflicts
+
+                    # Debug: Check what files actually exist
+                    echo "=== Root directory ==="
+                    ls -la
+                    echo "=== App directory ==="
+                    ls -la app/
+                    echo "=== Looking for wait script ==="
+                    find . -name "*wait*" -type f
+                    ls -la app/wait-for-postgress.sh || echo "Script not found in app/"
+                    file app/wait-for-postgress.sh || echo "Cannot check file type"
+
+                    # Clean up existing containers to avoid name conflicts
                     docker-compose down --remove-orphans || true
 
                     docker-compose build --pull --no-cache
@@ -37,6 +48,8 @@ pipeline {
             steps {
                 echo 'Testing API...'
                 sh '''
+                    # Wait for services to start
+                    sleep 15
                     # Optional: add simple healthcheck
                     curl -f http://localhost:8000 || exit 1
                 '''
