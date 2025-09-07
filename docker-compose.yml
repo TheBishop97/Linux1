@@ -21,7 +21,7 @@ services:
     container_name: perspectiva_api
     depends_on:
       - db
-    entrypoint: ["./wait-for-db.sh", "db", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    entrypoint: ["./app/wait-for-postgres.sh", "db", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/perspectiva
     ports:
