@@ -16,6 +16,8 @@ pipeline {
                     if [ ! -f .env ]; then
                         cp .env.example .env
                     fi
+		# Clean up existing containers to avoid name conflicts
+                    docker-compose down --remove-orphans || true
 
                     docker-compose build --pull --no-cache
                 '''
